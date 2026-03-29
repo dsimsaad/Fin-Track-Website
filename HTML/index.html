@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fin-Track Plus | Smart Personal Finance Manager</title>
+    <link rel="icon" href="../images/fin-Track_advisor_1-triangle.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body class="index-page">
+<nav class="navbar">
+  <div class="container-fluid">
+    <a class="navbar-brand logo" href="../html/index.html">
+      <div class="logo-container">
+        <i class="fa-solid fa-chart-column logo-icon"></i>
+        <span class="logo-text">Fin-Track <strong>Plus</strong></span>
+      </div>
+    </a>
+
+    <div class="d-flex align-items-center gap-2">
+      <a href="../html/about.html" class="btn signin-btn">About Us</a>
+      <a href="../html/signin.html" id="auth-btn" class="btn signin-btn">Sign In</a>
+      <button class="navbar-toggler custom_toggler"
+              type="button"
+              data-bs-toggle="offcanvas"
+              data-bs-target="#offcanvasNavbar">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+    </div>
+  </div>
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasNavbar">
+    <div class="offcanvas-header">
+  <a class="navbar-brand logo" href="../html/index.html">
+    <div class="logo-container d-flex align-items-center">
+      <i class="fa-solid fa-chart-column logo-icon me-2"></i>
+      <span class="logo-text">Fin-Track <strong>Plus</strong></span>
+    </div>
+  </a>
+  <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+</div>
+
+    <div class="offcanvas-body">
+  <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
+
+    <li class="nav-item">
+      <a class="nav-link" href="../html/contact.html">
+        <i class="fa-solid fa-envelope me-2"></i> Contact Us
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="../html/faqs.html">
+        <i class="fa-solid fa-question-circle me-2"></i> FAQs
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="../html/advise.html">
+        <i class="fa-solid fa-lightbulb me-2"></i> Recommendations
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="../html/summary.html">
+        <i class="fa-solid fa-file-invoice-dollar me-2"></i> Generate Report
+      </a>
+    </li>
+
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" href="../html/trackers.html" data-bs-toggle="dropdown">
+        <i class="fa-solid fa-list-check me-2"></i> Trackers
+      </a>
+      <ul class="dropdown-menu">
+        <li>
+          <a class="dropdown-item" href="../html/income_budget.html">
+            <i class="fa-solid fa-wallet me-2"></i> Income Tracker
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="../html/budget.html">
+            <i class="fa-solid fa-chart-pie me-2"></i> Budget Tracker
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="../html/expense.html">
+            <i class="fa-solid fa-receipt me-2"></i> Expense Tracker
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="../html/savings.html">
+            <i class="fa-solid fa-piggy-bank me-2"></i> Savings Tracker
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="../html/investment.html">
+            <i class="fa-solid fa-chart-line me-2"></i> Investments Tracker
+          </a>
+        </li>
+      </ul>
+    </li>
+
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle" href="../html/tools.html" data-bs-toggle="dropdown">
+        <i class="fa-solid fa-tools me-2"></i> Tools
+      </a>
+      <ul class="dropdown-menu">
+        <li>
+          <a class="dropdown-item" href="../html/calculator.html">
+            <i class="fa-solid fa-calculator me-2"></i> Investment Calculator
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="../html/compounding.html">
+            <i class="fa-solid fa-percent me-2"></i> Compounding Calculator
+          </a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+</nav>
+
+<section class="container text-center mt-5">
+    <h1 class="fw-bold display-5">
+        Take Control of Your Money<br>
+        <span style="color:#01b55e;">Without Complexity</span>
+    </h1>
+
+    <p class="hero-subtext mt-3">
+        Fin-Track Plus helps you track income, manage expenses,
+        build savings, and make smarter financial decisions - all from one dashboard.
+    </p>
+
+    <a href="../html/signin.html" class="btn dashboard_btn text-white mt-4 px-4 py-2">
+        Get Started Free
+    </a>
+<section class="container mt-5">
+
+    <h2 class="fw-semibold text-center mb-4">
+        Click to Proceed
+    </h2>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <a href="../html/income_budget.html" class="feature-link">
+                <div class="features text-center">
+                    <i class="fa-solid fa-wallet fa-2x mb-3"></i>
+                    <h4>Track Income</h4>
+                    <p>Know exactly where your money comes from.</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="../html/expense.html" class="feature-link">
+                <div class="features text-center">
+                    <i class="fa-solid fa-receipt fa-2x mb-3"></i>
+                    <h4>Control Expenses</h4>
+                    <p>Monitor spending and avoid budget leaks.</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="../html/savings.html" class="feature-link">
+                <div class="features text-center">
+                    <i class="fa-solid fa-piggy-bank fa-2x mb-3"></i>
+                    <h4>Build Savings</h4>
+                    <p>Set goals and track your progress clearly.</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="../html/calculator.html" class="feature-link">
+                <div class="features text-center">
+                    <i class="fa-solid fa-chart-line fa-2x mb-3"></i>
+                    <h4>Analyze Growth</h4>
+                    <p>Visual reports that show real progress.</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="../html/advise.html" class="feature-link">
+                <div class="features text-center">
+                    <i class="fa-solid fa-lightbulb fa-2x mb-3"></i>
+                    <h4>Smart Advice</h4>
+                    <p>Recommendations based on financial logic.</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="../html/summary.html" class="feature-link">
+                <div class="features text-center">
+                    <i class="fa-solid fa-file-invoice-dollar fa-2x mb-3"></i>
+                    <h4>Clear Reports</h4>
+                    <p>Simple summaries of your financial health.</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+<section class="container how-it-works mt-5">
+    <h2 class="about_title text-center mb-4">How It Works</h2>
+
+    <div class="row g-4 text-center">
+        <div class="col-md-4">
+            <div class="features">
+                <i class="fa-solid fa-user-plus fa-2x mb-3"></i>
+                <h4>Create an Account</h4>
+                <p>Sign up in seconds and get started.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="features">
+                <i class="fa-solid fa-pen-to-square fa-2x mb-3"></i>
+                <h4>Enter Your Data</h4>
+                <p>Add income, expenses, and savings.</p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="features">
+                <i class="fa-solid fa-chart-line fa-2x mb-3"></i>
+                <h4>Improve Decisions</h4>
+                <p>Use insights to manage money better.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="about_to_dashboard mt-5 text-center">
+    <h2 class="about_title">Why Fin-Track Plus?</h2>
+    <p class="about_text">
+        No clutter. No confusing terms. Just practical tools
+        designed to help you build disciplined financial habits.
+    </p>
+    <a href="../html/signin.html" class="btn dashboard_btn text-white mt-3">
+        Start Managing Your Money
+    </a>
+</section>
+</section>
+
+<footer class="simple-footer mt-5">
+    <div class="footer-content">
+        <p class="footer-brand">
+            © <span id="currentYear"></span> <strong>Fin-Track Plus</strong>. All Rights Reserved.
+        </p>
+        <div class="footer-links">
+            <a href="../html/about.html">About</a>
+            <span>|</span>
+            <a href="../html/contact.html">Contact</a>
+            <span>|</span>
+            <a href="../html/faqs.html">FAQs</a>
+        </div>
+    </div>
+</footer>
+<script src="../js/app.js"></script>
+<script type="module" src="../js/authi.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

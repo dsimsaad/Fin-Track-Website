@@ -1,95 +1,76 @@
-import { dataManager } from "./db.js";
-import { onAuthStateChanged, auth, db, doc, onSnapshot } from "./firebase.js";
-
 function $(id) {
     return document.getElementById(id);
 }
 
-// Global state mirrors the dataManager cache for UI rendering
 let budgetData = [];
 let expenseData = [];
 let incomeData = [];
 let savingsData = [];
 let savingsGoals = [];
 let investments = [];
-let debtData = { lent: [], borrowed: [] };
-let marketRates = { gold_24k: 0, silver: 0, stocks: {} };
 
 let selectedBudgetCategory = "food";
 let selectedExpenseCategory = "food";
 let selectedIncomeCategory = "salary";
 let selectedSavingCategory = "general";
-let selectedTicker = "";
 
-// Initialize App
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        console.log("User logged in:", user.uid);
-        dataManager.init(user.uid, (data) => {
-            // Update local state from db update
-            budgetData = data.budgetData;
-            expenseData = data.expenseData;
-            incomeData = data.incomeData;
-            savingsData = data.savingsData;
-            savingsGoals = data.savingsGoals;
-            investments = data.investments;
-            debtData = data.debtData;
+function saveToLocalStorage() {
+    const data = {
+        budgetData,
+        expenseData,
+        incomeData,
+        savingsData,
+        savingsGoals,
+        investments
+    };
+    localStorage.setItem('finTrackData', JSON.stringify(data));
+}
 
-            renderAll();
-        });
-
-        // Listen to Market Data
-        const marketDoc = doc(db, "market_rates", "latest");
-        onSnapshot(marketDoc, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                marketRates = {
-                    gold_24k: data.gold_24k || 0,
-                    silver: data.silver || 0,
-                    stocks: data.stocks || {}
-                };
-                renderInvestments(); // Re-render to update values
-            }
-        });
-
-    } else {
-        console.log("No user logged in");
-        if (!window.location.href.includes("index.html") && !window.location.href.includes("signin.html") && !window.location.href.includes("signup.html")) {
-            // Redirect to signin if accessing protected pages
-            // window.location.href = "../html/signin.html";
-        }
+function loadFromLocalStorage() {
+    const savedData = localStorage.getItem('finTrackData');
+    if (savedData) {
+        const parsed = JSON.parse(savedData);
+        budgetData = parsed.budgetData || [];
+        expenseData = parsed.expenseData || [];
+        incomeData = parsed.incomeData || [];
+        savingsData = parsed.savingsData || [];
+        savingsGoals = parsed.savingsGoals || [];
+        investments = parsed.investments || [];
     }
-});
+}
 
-
-// -- Budget Functions --
-window.setCategory = function (category) {
+function setCategory(category) {
     selectedBudgetCategory = category;
     const btn = $("budgetCategoryBtn");
     if (btn) btn.innerText = category.charAt(0).toUpperCase() + category.slice(1);
 }
 
-window.addBudget = function () {
+function addBudget() {
     const limit = parseFloat($("budgetLimit")?.value);
     if (!limit || limit <= 0) {
         alert("Please enter a valid budget amount");
         return;
     }
-    dataManager.addItem("budgetData", { category: selectedBudgetCategory, limit, spent: 0 });
+    budgetData.push({ category: selectedBudgetCategory, limit, spent: 0 });
     $("budgetLimit").value = "";
+    saveToLocalStorage();
+    renderBudget();
 }
 
-window.removeBudget = function (i) {
+function removeBudget(i) {
     if (confirm("Delete this budget?")) {
-        dataManager.removeItem("budgetData", i);
+        budgetData.splice(i, 1);
+        saveToLocalStorage();   
+        renderBudget();
     }
 }
 
-window.updateBudget = function (i) {
+function updateBudget(i) {
     const newLimit = prompt("Enter new budget amount:", budgetData[i].limit);
     if (newLimit && !isNaN(newLimit) && parseFloat(newLimit) > 0) {
-        const updated = { ...budgetData[i], limit: parseFloat(newLimit) };
-        dataManager.updateItem("budgetData", i, updated);
+        budgetData[i].limit = parseFloat(newLimit);
+        saveToLocalStorage();  
+        renderBudget();
     }
 }
 
@@ -98,7 +79,7 @@ function renderBudget() {
     if (!list) return;
     let totalBudget = 0;
     list.innerHTML = "";
-    if (!budgetData || budgetData.length === 0) {
+    if (budgetData.length === 0) {
         list.innerHTML = "<p class='text-muted'>No budgets yet.</p>";
     } else {
         budgetData.forEach((b, i) => {
@@ -117,34 +98,38 @@ function renderBudget() {
     if ($("totalSpent")) $("totalSpent").innerText = totalBudget;
 }
 
-// -- Expense Functions --
-window.setExpenseCategory = function (category) {
+function setExpenseCategory(category) {
     selectedExpenseCategory = category;
     const btn = $("expenseDropdown");
     if (btn) btn.innerText = category.charAt(0).toUpperCase() + category.slice(1);
 }
 
-window.addExpense = function () {
+function addExpense() {
     const amount = parseFloat($("expenseAmount")?.value);
     if (!amount || amount <= 0) {
         alert("Please enter a valid amount");
         return;
     }
-    dataManager.addItem("expenseData", { category: selectedExpenseCategory, amount });
+    expenseData.push({ category: selectedExpenseCategory, amount });
     $("expenseAmount").value = "";
+    saveToLocalStorage();   
+    renderExpenses();
 }
 
-window.updateExpense = function (i) {
+function updateExpense(i) {
     const newAmount = prompt("Enter new amount:", expenseData[i].amount);
     if (newAmount && !isNaN(newAmount) && parseFloat(newAmount) > 0) {
-        const updated = { ...expenseData[i], amount: parseFloat(newAmount) };
-        dataManager.updateItem("expenseData", i, updated);
+        expenseData[i].amount = parseFloat(newAmount);
+        saveToLocalStorage();  
+        renderExpenses();
     }
 }
 
-window.removeExpense = function (i) {
+function removeExpense(i) {
     if (confirm("Delete this expense?")) {
-        dataManager.removeItem("expenseData", i);
+        expenseData.splice(i, 1);
+        saveToLocalStorage();  
+        renderExpenses();
     }
 }
 
@@ -153,7 +138,7 @@ function renderExpenses() {
     if (!list) return;
     let total = 0;
     list.innerHTML = "";
-    if (!expenseData || expenseData.length === 0) {
+    if (expenseData.length === 0) {
         list.innerHTML = "<p class='text-muted'>No expenses yet.</p>";
     } else {
         expenseData.forEach((e, i) => {
@@ -171,34 +156,38 @@ function renderExpenses() {
     if ($("totalExpense")) $("totalExpense").innerText = total;
 }
 
-// -- Income Functions --
-window.setIncomeCategory = function (category) {
+function setIncomeCategory(category) {
     selectedIncomeCategory = category;
     const btn = $("incomeDropdown");
     if (btn) btn.innerText = category.charAt(0).toUpperCase() + category.slice(1);
 }
 
-window.addIncome = function () {
+function addIncome() {
     const amount = parseFloat($("incomeAmount")?.value);
     if (!amount || amount <= 0) {
         alert("Please enter a valid amount");
         return;
     }
-    dataManager.addItem("incomeData", { source: selectedIncomeCategory, amount });
+    incomeData.push({ source: selectedIncomeCategory, amount });
     $("incomeAmount").value = "";
+    saveToLocalStorage();  
+    renderIncome();
 }
 
-window.updateIncome = function (i) {
+function updateIncome(i) {
     const newAmount = prompt("Enter new amount:", incomeData[i].amount);
     if (newAmount && !isNaN(newAmount) && parseFloat(newAmount) > 0) {
-        const updated = { ...incomeData[i], amount: parseFloat(newAmount) };
-        dataManager.updateItem("incomeData", i, updated);
+        incomeData[i].amount = parseFloat(newAmount);
+        saveToLocalStorage();    
+        renderIncome();
     }
 }
 
-window.removeIncome = function (i) {
+function removeIncome(i) {
     if (confirm("Delete this income?")) {
-        dataManager.removeItem("incomeData", i);
+        incomeData.splice(i, 1);
+        saveToLocalStorage();  
+        renderIncome();
     }
 }
 
@@ -207,7 +196,7 @@ function renderIncome() {
     if (!list) return;
     let total = 0;
     list.innerHTML = "";
-    if (!incomeData || incomeData.length === 0) {
+    if (incomeData.length === 0) {
         list.innerHTML = "<p class='text-muted'>No income yet.</p>";
     } else {
         incomeData.forEach((inc, i) => {
@@ -225,34 +214,38 @@ function renderIncome() {
     if ($("totalIncome")) $("totalIncome").innerText = total;
 }
 
-// -- Savings Functions --
-window.setSavingCategory = function (category) {
+function setSavingCategory(category) {
     selectedSavingCategory = category;
     const btn = $("savingCategoryBtn");
     if (btn) btn.innerText = category.charAt(0).toUpperCase() + category.slice(1);
 }
 
-window.addSaving = function () {
+function addSaving() {
     const amount = parseFloat($("savingAmount")?.value);
     if (!amount || amount <= 0) {
         alert("Please enter a valid amount");
         return;
     }
-    dataManager.addItem("savingsData", { category: selectedSavingCategory, amount });
+    savingsData.push({ category: selectedSavingCategory, amount });
     $("savingAmount").value = "";
+    saveToLocalStorage();  
+    renderSavings();
 }
 
-window.updateSaving = function (i) {
+function updateSaving(i) {
     const newAmount = prompt("Enter new amount:", savingsData[i].amount);
     if (newAmount && !isNaN(newAmount) && parseFloat(newAmount) > 0) {
-        const updated = { ...savingsData[i], amount: parseFloat(newAmount) };
-        dataManager.updateItem("savingsData", i, updated);
+        savingsData[i].amount = parseFloat(newAmount);
+        saveToLocalStorage();  
+        renderSavings();
     }
 }
 
-window.removeSaving = function (i) {
+function removeSaving(i) {
     if (confirm("Delete this saving?")) {
-        dataManager.removeItem("savingsData", i);
+        savingsData.splice(i, 1);
+        saveToLocalStorage();  
+        renderSavings();
     }
 }
 
@@ -262,7 +255,7 @@ function renderSavings() {
     if (!list || !totalEl) return;
     let total = 0;
     list.innerHTML = "";
-    if (!savingsData || savingsData.length === 0) {
+    if (savingsData.length === 0) {
         list.innerHTML = "<p class='text-muted'>No savings yet.</p>";
     } else {
         savingsData.forEach((s, i) => {
@@ -280,7 +273,7 @@ function renderSavings() {
     totalEl.innerText = total;
 }
 
-window.addGoal = function () {
+function addGoal() {
     const name = $("goalName")?.value;
     const target = parseFloat($("goalTarget")?.value);
     const saved = parseFloat($("goalSaved")?.value) || 0;
@@ -288,23 +281,28 @@ window.addGoal = function () {
         alert("Please fill all fields correctly");
         return;
     }
-    dataManager.addItem("savingsGoals", { name, target, saved });
+    savingsGoals.push({ name, target, saved });
     $("goalName").value = "";
     $("goalTarget").value = "";
     $("goalSaved").value = "";
+    saveToLocalStorage();   
+    renderGoals();
 }
 
-window.addMoreToGoal = function (i) {
+function addMoreToGoal(i) {
     const addAmount = prompt("Enter additional amount to add:");
     if (addAmount && !isNaN(addAmount) && parseFloat(addAmount) > 0) {
-        const updated = { ...savingsGoals[i], saved: savingsGoals[i].saved + parseFloat(addAmount) };
-        dataManager.updateItem("savingsGoals", i, updated);
+        savingsGoals[i].saved += parseFloat(addAmount);
+        saveToLocalStorage();  
+        renderGoals();
     }
 }
 
-window.removeGoal = function (i) {
+function removeGoal(i) {
     if (confirm("Delete this goal?")) {
-        dataManager.removeItem("savingsGoals", i);
+        savingsGoals.splice(i, 1);
+        saveToLocalStorage();  
+        renderGoals();
     }
 }
 
@@ -312,7 +310,7 @@ function renderGoals() {
     const list = $("goalList");
     if (!list) return;
     list.innerHTML = "";
-    if (!savingsGoals || savingsGoals.length === 0) {
+    if (savingsGoals.length === 0) {
         list.innerHTML = "<p class='text-muted'>No goals yet.</p>";
         return;
     }
@@ -334,158 +332,85 @@ function renderGoals() {
     });
 }
 
-// -- Investments & Market Data --
-
-// Populate ticker dropdown if exists
-function renderTickerOptions() {
-    const select = $("tickerSelect");
-    if (!select) return;
-
-    // Clear existing (except first)
-    // select.innerHTML = '<option value="">Select a Ticker (Optional)</option>';
-    // Actually better to just append.
-
-    if (marketRates.stocks) {
-        let opts = `<option value="">Select Ticker (Optional)</option>`;
-        opts += `<option value="GOLD">Gold (24K)</option>`;
-        opts += `<option value="SILVER">Silver</option>`;
-
-        for (const [symbol, price] of Object.entries(marketRates.stocks)) {
-            opts += `<option value="${symbol}">${symbol} (Rs. ${price})</option>`;
-        }
-        select.innerHTML = opts;
-    }
-}
-
-window.addInvestment = function () {
+function addInvestment() {
     const name = $("investmentname")?.value;
     const invested = parseFloat($("investedamount")?.value);
-
-    // Optional ticker linking
-    const ticker = $("tickerSelect")?.value || "";
-
+    const profit = parseFloat($("profitearned")?.value) || 0;
     if (!name || !invested || invested <= 0) {
         alert("Please fill all fields correctly");
         return;
     }
-
-    // Initial profit is 0 unless manually set, but we are switching to calculated value
-    const profit = parseFloat($("profitearned")?.value) || 0; // Legacy manual profit input
-
-    dataManager.addItem("investments", {
-        name,
-        invested,
-        profit,
-        ticker: ticker,
-        quantity: invested / (getTickerPrice(ticker) || 1) // Rough estimate if ticker used
-    });
-
+    investments.push({ name, invested, profit });
     $("investmentname").value = "";
     $("investedamount").value = "";
-    if ($("profitearned")) $("profitearned").value = "";
-    if ($("tickerSelect")) $("tickerSelect").value = "";
+    $("profitearned").value = "";
+    saveToLocalStorage();  
+    renderInvestments();
 }
 
-function getTickerPrice(ticker) {
-    if (!ticker) return 0;
-    if (ticker === "GOLD") return marketRates.gold_24k;
-    if (ticker === "SILVER") return marketRates.silver;
-    return marketRates.stocks[ticker] || 0;
-}
-
-window.addMoreProfit = function (i) {
-    const addProfit = prompt("Enter additional profit (Manual Update):");
+function addMoreProfit(i) {
+    const addProfit = prompt("Enter additional profit:");
     if (addProfit && !isNaN(addProfit) && parseFloat(addProfit) > 0) {
-        const updated = { ...investments[i], profit: investments[i].profit + parseFloat(addProfit) };
-        dataManager.updateItem("investments", i, updated);
+        investments[i].profit += parseFloat(addProfit);
+        saveToLocalStorage();  
+        renderInvestments();
     }
 }
 
-window.removeInvestment = function (i) {
+function removeInvestment(i) {
     if (confirm("Delete this investment?")) {
-        dataManager.removeItem("investments", i);
+        investments.splice(i, 1);
+        saveToLocalStorage();   
+        renderInvestments();
     }
 }
 
 function renderInvestments() {
-    renderTickerOptions();
-
     const list = $("investmentList");
     const totalEl = $("totalinvestments");
     if (!list || !totalEl) return;
-
     let totalInvested = 0;
-    let totalCurrentValue = 0;
-
+    let totalAmount = 0;
     list.innerHTML = "";
-    if (!investments || investments.length === 0) {
+    if (investments.length === 0) {
         list.innerHTML = "<p class='text-muted'>No investments yet.</p>";
     } else {
         investments.forEach((inv, i) => {
             totalInvested += inv.invested;
-
-            // Calculate current value based on ticker if available
-            let currentValue = inv.invested + inv.profit;
-            let isLive = false;
-
-            if (inv.ticker) {
-                const currentPrice = getTickerPrice(inv.ticker);
-                if (currentPrice > 0) {
-                    // Update quantity if it was missing (migration)
-                    if (!inv.quantity) inv.quantity = inv.invested / currentPrice;
-
-                    // Or actually, let's assume quantity was set on purchase. 
-                    // But for simplicity in this migration, let's treat 'invested' as cost basis.
-                    // If we stored quantity, we do quantity * currentPrice.
-                    // If we didn't, we can't magically know.
-                    // Let's rely on manual profit unless it's a new entry with quantity.
-
-                    if (inv.quantity) {
-                        currentValue = inv.quantity * currentPrice;
-                        isLive = true;
-                    }
-                }
-            }
-
-            totalCurrentValue += currentValue;
-            const profitOrLoss = currentValue - inv.invested;
-            const profitPercent = inv.invested > 0 ? ((profitOrLoss / inv.invested) * 100).toFixed(1) : "0.0";
-            const colorClass = profitOrLoss >= 0 ? "text-success" : "text-danger";
-
+            totalAmount += (inv.invested + inv.profit);
+            const total = inv.invested + inv.profit;
+            const profitPercent = inv.invested > 0 ? ((inv.profit / inv.invested) * 100).toFixed(1) : "0.0";
             list.innerHTML += `
                 <div class="border rounded p-3 mb-3">
-                    <div class="d-flex justify-content-between">
-                         <strong>${inv.name} ${inv.ticker ? `<span class="badge bg-info">${inv.ticker}</span>` : ""}</strong>
-                         <span class="${colorClass}">${profitPercent}%</span>
-                    </div>
-                    Invested: Rs. ${inv.invested.toFixed(2)}<br>
-                    Current Value: Rs. ${currentValue.toFixed(2)} ${isLive ? "(Live)" : ""}<br>
-                    Profit/Loss: <span class="${colorClass}">Rs. ${profitOrLoss.toFixed(2)}</span>
+                    <strong>${inv.name}</strong><br>
+                    Invested: Rs. ${inv.invested}<br>
+                    Profit: Rs. ${inv.profit}<br>
+                    <strong>Total Amount:</strong> Rs. ${total}<br>
+                    <strong>Profit %:</strong> ${profitPercent}%
                     <div class="mt-2">
-                        <button class="btn btn-sm btn-outline-success me-2" onclick="addMoreProfit(${i})">Adjust Manual Profit</button>
+                        <button class="btn btn-sm btn-outline-success me-2" onclick="addMoreProfit(${i})">Add Profit</button>
                         <button class="btn btn-sm btn-outline-danger" onclick="removeInvestment(${i})">Remove</button>
                     </div>
                 </div>`;
         });
     }
-    totalEl.innerText = totalInvested.toFixed(2);
-    if ($("totalAmount")) $("totalAmount").innerText = totalCurrentValue.toFixed(2);
-}
+    totalEl.innerText = totalInvested;
+    if ($("totalAmount")) $("totalAmount").innerText = totalAmount;
+} 
 
-// -- Calculators --
-window.calculateInvestment = function () {
+function calculateInvestment() {
     const amount = parseFloat($("invAmount")?.value);
     const rate = parseFloat($("invReturn")?.value);
     const years = parseFloat($("invTime")?.value);
-
+    
     if (!amount || amount <= 0 || !rate || rate <= 0 || !years || years <= 0) {
         alert("Please enter valid values");
         return;
     }
-
+    
     const profit = (amount * rate * years) / 100;
     const total = amount + profit;
-
+    
     const resultDiv = $("investmentResult");
     if (resultDiv) {
         resultDiv.innerHTML = `
@@ -499,7 +424,7 @@ window.calculateInvestment = function () {
     }
 }
 
-window.calculateCompounding = function () {
+function calculateCompounding() {
     const amount = parseFloat($("cmpAmount")?.value);
     const rate = parseFloat($("cmpReturn")?.value) / 100;
     const years = parseInt($("cmpTime")?.value);
@@ -511,7 +436,7 @@ window.calculateCompounding = function () {
     }
 
     let total = amount;
-    let totalInvested = amount;
+    let totalInvested = amount; 
     for (let year = 0; year < years; year++) {
         total *= Math.pow(1 + rate / freq, freq);
         if (monthly > 0) {
@@ -532,7 +457,8 @@ window.calculateCompounding = function () {
             ${monthly > 0 ? `<p>Monthly Contribution: Rs. ${monthly.toFixed(2)}</p>` : ""}
             <p>Annual Return: ${(rate * 100).toFixed(2)}%</p>
             <p>Time Period: ${years} years</p>
-            <p>Compounding Frequency: ${freq === 12 ? "Monthly" : freq === 4 ? "Quarterly" : "Yearly"
+            <p>Compounding Frequency: ${
+                freq === 12 ? "Monthly" : freq === 4 ? "Quarterly" : "Yearly"
             }</p>
             <hr>
             <p><strong>Total Profit: Rs. ${profit.toFixed(2)}</strong></p>
@@ -542,85 +468,60 @@ window.calculateCompounding = function () {
     }
 }
 
-// -- Summary Functions --
-function generateSummaryReport() {
-    // Safety checks
-    const iData = incomeData || [];
-    const eData = expenseData || [];
-    const sData = savingsData || [];
-    const invData = investments || [];
 
-    const totalIncome = iData.reduce((sum, i) => sum + i.amount, 0);
-    const totalExpense = eData.reduce((sum, e) => sum + e.amount, 0);
-    const totalSavings = sData.reduce((sum, s) => sum + s.amount, 0);
-    const totalInvested = invData.reduce((sum, inv) => sum + inv.invested, 0);
+function generateSummaryReport() {
+    const totalIncome = incomeData.reduce((sum, i) => sum + i.amount, 0);
+    const totalExpense = expenseData.reduce((sum, e) => sum + e.amount, 0);
+    const totalSavings = savingsData.reduce((sum, s) => sum + s.amount, 0);
+    const totalInvested = investments.reduce((sum, inv) => sum + inv.invested, 0);
     const totalAssets = totalSavings + totalInvested;
 
     const expenseRatio = totalIncome > 0 ? ((totalExpense / totalIncome) * 100).toFixed(1) : 0;
 
-    if ($("totalIncome")) $("totalIncome").innerText = `Rs. ${totalIncome}`;
-    if ($("totalExpense")) $("totalExpense").innerText = `Rs. ${totalExpense}`;
-    if ($("totalSavings")) $("totalSavings").innerText = `Rs. ${totalSavings}`;
-    if ($("totalInvested")) $("totalInvested").innerText = `Rs. ${totalInvested}`;
-    if ($("totalAssets")) $("totalAssets").innerText = `Rs. ${totalAssets}`;
+    $("totalIncome").innerText = `Rs. ${totalIncome}`;
+    $("totalExpense").innerText = `Rs. ${totalExpense}`;
+    $("totalSavings").innerText = `Rs. ${totalSavings}`;
+    $("totalInvested").innerText = `Rs. ${totalInvested}`;
+    $("totalAssets").innerText = `Rs. ${totalAssets}`;
 
-    const incomeListHTML = iData.length
-        ? iData.map(i => `<li class="list-group-item px-0 border-0 py-1">${i.source}: Rs.${i.amount}</li>`).join("")
+    const incomeListHTML = incomeData.length
+        ? incomeData.map(i => `<li class="list-group-item px-0 border-0 py-1">${i.source}: Rs.${i.amount}</li>`).join("")
         : "<li class='list-group-item px-0 border-0 py-1 text-muted'>No Income Data</li>";
 
-    const expenseListHTML = eData.length
-        ? eData.map(e => `<li class="list-group-item px-0 border-0 py-1">${e.category}: Rs.${e.amount}</li>`).join("")
+    const expenseListHTML = expenseData.length
+        ? expenseData.map(e => `<li class="list-group-item px-0 border-0 py-1">${e.category}: Rs.${e.amount}</li>`).join("")
         : "<li class='list-group-item px-0 border-0 py-1 text-muted'>No Expense Data</li>";
 
-    const savingsListHTML = sData.length
-        ? sData.map(s => `<li class="list-group-item px-0 border-0 py-1">${s.category}: Rs.${s.amount}</li>`).join("")
+    const savingsListHTML = savingsData.length
+        ? savingsData.map(s => `<li class="list-group-item px-0 border-0 py-1">${s.category}: Rs.${s.amount}</li>`).join("")
         : "<li class='list-group-item px-0 border-0 py-1 text-muted'>No Savings Data</li>";
 
-    const investmentsListHTML = invData.length
-        ? invData.map(inv => `<li class="list-group-item px-0 border-0 py-1">${inv.name}: Rs.${inv.invested}</li>`).join("")
+    const investmentsListHTML = investments.length
+        ? investments.map(inv => `<li class="list-group-item px-0 border-0 py-1">${inv.name}: Rs.${inv.invested}</li>`).join("")
         : "<li class='list-group-item px-0 border-0 py-1 text-muted'>No Investments Data</li>";
 
-    if ($("incomeListSummary")) $("incomeListSummary").innerHTML = incomeListHTML;
-    if ($("expenseListSummary")) $("expenseListSummary").innerHTML = expenseListHTML;
-    if ($("savingListSummary")) $("savingListSummary").innerHTML = savingsListHTML;
-    if ($("investmentListSummary")) $("investmentListSummary").innerHTML = investmentsListHTML;
+    $("incomeListSummary").innerHTML = incomeListHTML;
+    $("expenseListSummary").innerHTML = expenseListHTML;
+    $("savingListSummary").innerHTML = savingsListHTML;
+    $("investmentListSummary").innerHTML = investmentsListHTML;
 
-    if ($("incomeProgressBar")) {
-        $("incomeProgressBar").style.width = `${Math.min(expenseRatio, 100)}%`;
-        $("incomeProgressBar").className = `progress-bar ${totalExpense > totalIncome ? 'bg-danger' : 'bg-success'}`;
-    }
-    if ($("expenseRatioText")) $("expenseRatioText").innerText = `${expenseRatio}% Spent`;
-}
+    $("incomeProgressBar").style.width = `${Math.min(expenseRatio, 100)}%`;
+    $("incomeProgressBar").className = `progress-bar ${totalExpense > totalIncome ? 'bg-danger' : 'bg-success'}`;
+    $("expenseRatioText").innerText = `${expenseRatio}% Spent`;
+} 
 
-window.getRecommendation = async function () {
+async function getRecommendation() {
     const userInput = $("userInput").value.trim();
     if (!userInput) return;
 
     const chatArea = $("chatArea");
-
-    const userContainer = document.createElement("div");
-    userContainer.style.display = "flex";
-    userContainer.style.justifyContent = "flex-end";
-    userContainer.style.marginBottom = "15px";
-    userContainer.style.width = "100%";
-
-    userContainer.innerHTML = `<span style="background:#e2e8f0; color:#1e293b; padding: 12px 18px; border-radius:15px 15px 0px 15px; max-width: 80%; line-height: 1.5; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">${userInput}</span>`;
-    chatArea.appendChild(userContainer);
-
+    chatArea.innerHTML += `<div style="text-align:right;"><span style="background:#f1f5f9; padding: 14px 18px; border-radius:12px; margin-bottom: 12px;">${userInput}</span></div>`;
     $("userInput").value = "";
 
-    const botContainer = document.createElement("div");
-    botContainer.style.display = "flex";
-    botContainer.style.justifyContent = "flex-start";
-    botContainer.style.marginBottom = "15px";
-    botContainer.style.width = "100%";
-
     const botMsgDiv = document.createElement("div");
-    botMsgDiv.innerHTML = `<span style="background:#f8fafc; border: 1px solid #e2e8f0; padding:12px 18px; border-radius:15px 15px 15px 0px; max-width: 80%; line-height: 1.5; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">Mark is thinking...</span>`;
-    botContainer.appendChild(botMsgDiv);
-    chatArea.appendChild(botContainer);
-
-    chatArea.scrollTop = chatArea.scrollHeight;
+    botMsgDiv.style.margin = "10px";
+    botMsgDiv.innerHTML = `<span style="background:#f1f5f9; padding:14px 18px; margin-bottom:12px; border-radius:12px;">Mark is thinking...</span>`;
+    chatArea.appendChild(botMsgDiv);
 
     const apiKey = "";
     const url = ``;
@@ -630,22 +531,22 @@ window.getRecommendation = async function () {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: `You are Mark. You only Give halal finance advice on expenses, savings, and simple investments, if the user asks an irrelevant question you would tell them that you can only help them with basic finances. User asks: ${userInput}` }] }]
+                contents: [{ parts: [{ text: `You are Mark. You only Give halal finance advice on expenses, savings, and simple investments, if the user asks an irrelevant question you would tell them that you can only help them with basic finances, if you are asked about who created this site or integrated you, you will tell Hassan javed and Muhammad Saad. User asks: ${userInput}` }] }]
             })
         });
 
         const data = await response.json();
 
         if (data.error) {
-            botMsgDiv.innerHTML = `<span style="color:red; background:#fff1f2; padding:10px; border-radius:8px;">API Error: ${data.error.message}</span>`;
+            botMsgDiv.innerHTML = `<span style="color:red;">API Error: ${data.error.message}</span>`;
             return;
         }
 
         const aiResponse = data.candidates[0].content.parts[0].text;
-        botMsgDiv.innerHTML = `<span style="background:#f8fafc; border: 1px solid #e2e8f0; padding:12px 18px; border-radius:15px 15px 15px 0px; max-width: 100%; display: inline-block; line-height: 1.5; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"><b style="color:#059669;">Mark:</b><br>${aiResponse.replace(/\n/g, '<br>')}</span>`;
-
+        botMsgDiv.innerHTML = `<span style="background:#f1f5f9; padding:14px 18px; border-radius:12px; margin-bottom: 12px;"><b>Mark:</b> ${aiResponse}</span>`;
+        
     } catch (error) {
-        botMsgDiv.innerHTML = `<span style="color:orange; background:#fff7ed; padding:10px; border-radius:8px;">Connection issue. Use 'Live Server'.</span>`;
+        botMsgDiv.innerHTML = `<span style="color:orange;">Connection issue. Try opening this file with VS Code 'Live Server'.</span>`;
         console.log("Full error for debugging:", error);
     }
     chatArea.scrollTop = chatArea.scrollHeight;
@@ -658,17 +559,10 @@ function renderSummaryChart() {
     if (window.summaryChartInstance) {
         window.summaryChartInstance.destroy();
     }
-
-    // Safety
-    const iData = incomeData || [];
-    const eData = expenseData || [];
-    const sData = savingsData || [];
-    const invData = investments || [];
-
-    const totalIncome = iData.reduce((s, i) => s + i.amount, 0);
-    const totalExpense = eData.reduce((s, e) => s + e.amount, 0);
-    const totalSavings = sData.reduce((s, s2) => s + s2.amount, 0);
-    const totalInvested = invData.reduce((s, inv) => s + inv.invested, 0);
+    const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
+    const totalExpense = expenseData.reduce((s, e) => s + e.amount, 0);
+    const totalSavings = savingsData.reduce((s, s2) => s + s2.amount, 0);
+    const totalInvested = investments.reduce((s, inv) => s + inv.invested, 0);
 
     window.summaryChartInstance = new Chart(canvas, {
         type: "bar",
@@ -699,165 +593,16 @@ function renderSummaryChart() {
     });
 }
 
-function renderAll() {
+window.onload = function() {
+    loadFromLocalStorage();   
     renderBudget();
     renderExpenses();
     renderIncome();
     renderSavings();
     renderGoals();
     renderInvestments();
-    if (debtData) renderDebt(); // New
     generateSummaryReport();
     renderSummaryChart();
-}
-
-// -- Debt Module Logic --
-window.renderDebt = function () {
-    renderLent();
-    renderBorrowed();
-    updateDebtSummary();
-}
-
-function renderLent() {
-    const list = $("lentList");
-    if (!list) return;
-    list.innerHTML = "";
-    const lent = debtData?.lent || [];
-
-    if (lent.length === 0) {
-        list.innerHTML = "<p class='text-muted'>No lent records.</p>";
-        return;
-    }
-
-    lent.forEach((item, i) => {
-        const remaining = item.amount - item.received;
-        const statusClass = remaining <= 0 ? "text-success" : "text-warning";
-        const statusText = remaining <= 0 ? "Cleared" : "Pending";
-
-        list.innerHTML += `
-            <div class="border rounded p-3 mb-3">
-                <div class="d-flex justify-content-between">
-                     <strong>${item.person}</strong>
-                     <span class="${statusClass} fw-bold">${statusText}</span>
-                </div>
-                <div class="text-secondary small mt-1">Lent: Rs. ${item.amount}</div>
-                <div class="text-secondary small">Received: Rs. ${item.received}</div>
-                <div class="mt-2 text-danger fw-bold">Remaining: Rs. ${remaining}</div>
-
-                <div class="mt-2">
-                    <button class="btn btn-sm btn-outline-primary me-2" onclick="addReceived(${i})">Add Received</button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="removeLent(${i})">Remove</button>
-                </div>
-            </div>`;
-    });
-}
-
-function renderBorrowed() {
-    const list = $("borrowedList");
-    if (!list) return;
-    list.innerHTML = "";
-    const borrowed = debtData?.borrowed || [];
-
-    if (borrowed.length === 0) {
-        list.innerHTML = "<p class='text-muted'>No borrowed records.</p>";
-        return;
-    }
-
-    borrowed.forEach((item, i) => {
-        const remaining = item.amount - item.paid;
-        const statusClass = remaining <= 0 ? "text-success" : "text-warning";
-        const statusText = remaining <= 0 ? "Cleared" : "Pending";
-
-        list.innerHTML += `
-             <div class="border rounded p-3 mb-3">
-                <div class="d-flex justify-content-between">
-                     <strong>${item.person}</strong>
-                     <span class="${statusClass} fw-bold">${statusText}</span>
-                </div>
-                <div class="text-secondary small mt-1">Borrowed: Rs. ${item.amount}</div>
-                <div class="text-secondary small">Paid: Rs. ${item.paid}</div>
-                <div class="mt-2 text-danger fw-bold">Remaining: Rs. ${remaining}</div>
-
-                <div class="mt-2">
-                    <button class="btn btn-sm btn-outline-primary me-2" onclick="addPaid(${i})">Add Paid</button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="removeBorrowed(${i})">Remove</button>
-                </div>
-            </div>`;
-    });
-}
-
-window.addLent = function () {
-    const person = $("lentPerson")?.value;
-    const amount = parseFloat($("lentAmount")?.value);
-
-    if (!person || !amount || amount <= 0) return;
-
-    dataManager.addDebtItem("lent", {
-        person,
-        amount,
-        received: 0,
-        status: "pending"
-    });
-
-    $("lentPerson").value = "";
-    $("lentAmount").value = "";
-}
-
-window.addBorrowed = function () {
-    const person = $("borrowedPerson")?.value;
-    const amount = parseFloat($("borrowedAmount")?.value);
-
-    if (!person || !amount || amount <= 0) return;
-
-    dataManager.addDebtItem("borrowed", {
-        person,
-        amount,
-        paid: 0,
-        status: "pending"
-    });
-
-    $("borrowedPerson").value = "";
-    $("borrowedAmount").value = "";
-}
-
-window.addReceived = function (i) {
-    const amt = prompt("Enter amount received:");
-    if (!amt || isNaN(amt)) return;
-
-    const item = debtData.lent[i];
-    const updated = { ...item, received: item.received + parseFloat(amt) };
-    if (updated.received >= updated.amount) updated.status = "cleared";
-
-    dataManager.updateDebtItem("lent", i, updated);
-}
-
-window.addPaid = function (i) {
-    const amt = prompt("Enter amount paid:");
-    if (!amt || isNaN(amt)) return;
-
-    const item = debtData.borrowed[i];
-    const updated = { ...item, paid: item.paid + parseFloat(amt) };
-    if (updated.paid >= updated.amount) updated.status = "cleared";
-
-    dataManager.updateDebtItem("borrowed", i, updated);
-}
-
-window.removeLent = function (i) {
-    if (confirm("Remove this record?")) dataManager.removeDebtItem("lent", i);
-}
-
-window.removeBorrowed = function (i) {
-    if (confirm("Remove this record?")) dataManager.removeDebtItem("borrowed", i);
-}
-
-function updateDebtSummary() {
-    // optional total calc
-}
-
-// Initial Render
-window.onload = function () {
-    // Wait for auth to trigger init
-    renderAll();
 };
 
 

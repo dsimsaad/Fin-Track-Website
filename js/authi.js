@@ -1,5 +1,5 @@
 import { auth } from "./firebase.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const authBtn = document.getElementById("auth-btn");
@@ -7,13 +7,17 @@ document.addEventListener("DOMContentLoaded", () => {
   onAuthStateChanged(auth, user => {
     if (user) {
       authBtn.textContent = "Log out";
-      if (typeof loadFromLocalStorage === "function") {
-          loadFromLocalStorage(user.uid);
-          renderAll(); 
-      }
+      authBtn.href = "#"; 
+      authBtn.onclick = e => {
+        e.preventDefault();
+        signOut(auth).then(() => {
+          window.location.href = "../html/signin.html";
+        });
+      };
     } else {
-      currentUserId = null;
       authBtn.textContent = "Sign In";
+      authBtn.href = "../html/signin.html";
+      authBtn.onclick = null;
     }
-});
+  });
 });
